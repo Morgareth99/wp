@@ -1,127 +1,100 @@
-#!/bin/bash
-# vim: ts=2 sw=2 sts=2 et
+#!/usr/bin/env bash
 
-# [wp] simple wallpaper setter
-# Written by Netzverweigerer @ Github
-
-# wallpaper location
-
-# ~/Pictures
-# location="$HOME/Pictures"
-
-# current directory (default)
-location="./"
-
-# info line prefix
-p="[wp]"
-
-# wallpaper set command
-wpcmd="Esetroot -f"
-
-# function to shuffle the files array
-shuffle () {
-   local i tmp size max rand
-   size=${#files[*]}
-   max="32000"
-   for ((i=size-1; i>0; i--)); do
-      while (( (rand=$RANDOM) >= max )); do :; done
-      rand=$(( rand % (i+1) ))
-      tmp=${files[i]} files[i]=${files[rand]} files[rand]=$tmp
-   done
-}
-
-printf "%s" "${array[@]}"
-
-# restores a wallpaper from saved path
-restore () {
-  # wp="$(cat $HOME/.wp)"
-  wp="$HOME/.wp"
-  echo "Restoring saved wallpaper $wp ..."
-  Esetroot -f "$wp" && exit 0
-  exit 1
-}
-
-# usage help
 usage () {
-  cat <<-END
-    [wp] keybindings:
-
-    n: (N)ext Image
-    p: (P)revious Image
-    q: (Q)uit wp - saves selected wallpaper, use "wp -r" to restore (e.g. from .xinitrc)
-    s: (S)lideshow, use the "q" key to quit and save. (e.g. from .xinitrc)
-
-END
+  echo "$0 [--random|--set|--get|--save|--restore|--interactive]"
 }
 
-# removes double strings from args and sets $m to the result
-removedoubleslashes () {
-  m="$(echo "$@" | sed 's#\/\/#\/#g')"
+dir="$(pwd)"
+array=($dir/*)
+totalcount="${#array[@]}"
+
+set () {
+  file="$1"
+  echo "Setting: $file"
+  mkdir -p $HOME/.wp
+  feh --bg-fill "$file" && \
+  echo "$file" > /tmp/.wp.${UID}.current
 }
 
-# sets wallpaper
-setwp () {
-  removedoubleslashes "$@"
-  echo "$p Setting wallpaper: $m"
-  Esetroot -f "$m" && echo "$p Wallpaper set, type [q] to save/quit."
+save () {
+  if [[ ! -f /tmp/.wp.${UID}.current ]]; then
+    echo "Error: /tmp/.wp.${UID}.current does not exist. Exiting."
+    exit 1
+  else
+    echo -n "Saving last set wallpaper: "
+    cat /tmp/.wp.${UID}.current > $HOME/.wp.current && cat $HOME/.wp.current
+  fi
 }
 
-# saves wallpaper path
-savewp () {
-  removedoubleslashes "$@"
-  echo "$p Saving wallpaper selection to ~/.wp: $m ..."
-  cp "$m" $HOME/.wp
+restore () {
+  echo "Restoring last set wallpaper... "
+  if [[ -f $HOME/.wp.current ]]; then
+    wp="$(head -n 1 $HOME/.wp.current)"
+    set "$wp" || echo "Error: could not set wallpaper: $wp - exiting..."
+    exit 1
+  else
+    echo "Error: could not re-store: $HOME/.wp.current does not exist - exiting..."
+    exit 1
+  fi
 }
 
-# argument parser
-case "$1" in
-  -r)
-    restore
-    ;;
-  -s)
-    setwp "$@"
-  ;;
-  -h|*)
-    usage
-  ;;
-  '')
-    restore
-  ;;
-esac
+get () {
+  cat $HOME/.wp.current
+}
 
-files=($location/*)
-# shuffle files array
-shuffle
-count=1
+random () {
+  randomindex="$(shuf -i 1-${totalcount} -n 1)"
+  file="${array[$randomindex]}"
+  echo ">>> $file"
+  set "$file"
+}
 
-while read -t 10 -n 1 -s key; do
-  case $key in
+handler () {
+  read -n 1 reply
+  case "$reply" in
     n)
-      ((count++))
-      setwp "${files[count]}"
+      random
     ;;
-    p)
-      ((count--))
-      setwp "${files[count]}"
+    s)
+      save
     ;;
     q)
-      savewp "${files[count]}"
       exit 0
     ;;
-    *)
-      echo "$p Invalid input key."
-      usage
-    ;;
   esac
-done
+}
 
-echo "You seem to like this wallpaper, as you have been looking at it"
-echo "for more than 10 seconds. I decided to quit and save this for you."
+interactive () {
+  while true; do
+    echo "Press [n]ext until you fnd a wallpaper you like,"
+    echo "then press [s]ave to save wallpaper and [q]uit."
+    handler
+  done
+}
 
-setwp "${files[count]}"
-savewp "${files[count]}" 
-
-echo "Goodbye."
+case "$1" in
+  --set)
+    set
+  ;;
+  --get)
+    get
+  ;;
+  --random)
+    random
+  ;;
+  --save)
+    save 
+  ;;
+  --restore)
+    restore 
+  ;;
+  --interactive)
+    interactive
+  ;;
+  *)
+  usage
+  ;;
+esac
 
 
 
