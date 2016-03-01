@@ -1,10 +1,46 @@
 #!/usr/bin/env bash
+#
+# [wp] - simple X wallpaper setter with optional
+# interactive mode and save/restore functionality.
+#
+# Copyright 2016 Armin Jenewein (@netzverweigerer on GitHub)
+#
+# wp is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# wp is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with wp. If not, see <http://www.gnu.org/licenses/>.
+#
 
-usage () {
-  echo "$0 [--random|--set|--get|--save|--restore|--interactive]"
+# path to wallpaper directory (this is likely the only
+# thing you need to change...)
+dir="$HOME/wallpapers"
+
+banner () {
+  tput setaf 12
+  echo -n "["
+  tput setaf 7
+  echo -n "wp"
+  tput setaf 12
+  echo -n "]"
+  tput sgr0
+  echo -n " "
 }
 
-dir="$(pwd)"
+banner
+
+usage () {
+  echo -n "[wp] Usage: "
+  echo "wp [--random|--set|--get|--save|--restore|--interactive]"
+}
+
 array=($dir/*)
 totalcount="${#array[@]}"
 
@@ -21,8 +57,9 @@ save () {
     echo "Error: /tmp/.wp.${UID}.current does not exist. Exiting."
     exit 1
   else
-    echo -n "Saving last set wallpaper: "
-    cat /tmp/.wp.${UID}.current > $HOME/.wp.current && cat $HOME/.wp.current
+    echo "Saving last set wallpaper: "
+    cat /tmp/.wp.${UID}.current > $HOME/.wp.current && f="$(cat $HOME/.wp.current)"; echo -n "$f "
+    echo
   fi
 }
 
@@ -45,12 +82,11 @@ get () {
 random () {
   randomindex="$(shuf -i 1-${totalcount} -n 1)"
   file="${array[$randomindex]}"
-  echo ">>> $file"
   set "$file"
 }
 
 handler () {
-  read -n 1 reply
+  read -s -n 1 reply
   case "$reply" in
     n)
       random
@@ -59,15 +95,15 @@ handler () {
       save
     ;;
     q)
+      echo "Bye..."
       exit 0
     ;;
   esac
 }
 
 interactive () {
+  echo "Keys: [n]ext [s]ave [q]uit"
   while true; do
-    echo "Press [n]ext until you fnd a wallpaper you like,"
-    echo "then press [s]ave to save wallpaper and [q]uit."
     handler
   done
 }
