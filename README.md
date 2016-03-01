@@ -35,7 +35,7 @@ Restore functionality
 
 If you like to set your last set wallpaper on log-in, you can do so by adding a line like this one to your ~/.xinitrc file:
 
-# wp --restore
+> wp --restore
 
 Bugs?
 =====
