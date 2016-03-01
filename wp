@@ -128,7 +128,7 @@ case "$1" in
     interactive
   ;;
   *)
-  usage
+    usage
   ;;
 esac
 
