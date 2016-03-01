@@ -1,2 +1,9 @@
-# wp
-Simple wallpaper setter script, with possibility to restore a saved wallpaper on login. Perfect for disk space conservative setups.
+wp
+==
+
+Description
+===========
+
+wp is a tiny wallpaper setter script with save/restore functionality and optional interactive mode.
+
+
