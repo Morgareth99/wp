@@ -48,7 +48,7 @@ set () {
   file="$1"
   echo "Setting: $file"
   mkdir -p $HOME/.wp
-  feh --bg-fill "$file" && \
+  feh --no-fehbg --bg-fill "$file" && \
   echo "$file" > /tmp/.wp.${UID}.current
 }
 
@@ -57,7 +57,7 @@ save () {
     echo "Error: /tmp/.wp.${UID}.current does not exist. Exiting."
     exit 1
   else
-    echo "Saving last set wallpaper: "
+    echo -n "Saving wallpaper selection: "
     cat /tmp/.wp.${UID}.current > $HOME/.wp.current && f="$(cat $HOME/.wp.current)"; echo -n "$f "
     echo
   fi
@@ -110,7 +110,9 @@ interactive () {
 
 case "$1" in
   --set)
-    set
+    shift
+    set "$1"
+    save
   ;;
   --get)
     get
