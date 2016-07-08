@@ -44,6 +44,8 @@ usage () {
 array=($dir/*)
 totalcount="${#array[@]}"
 
+echo "Total number of wallpapers found: $totalcount"
+
 set () {
   file="$1"
   echo "Setting: $file"
@@ -81,7 +83,8 @@ get () {
 
 random () {
   randomindex="$(shuf -i 1-${totalcount} -n 1)"
-  file="${array[$randomindex]}"
+	randomindex=$((randomindex-1))
+	file=$array
   set "$file"
 }
 
