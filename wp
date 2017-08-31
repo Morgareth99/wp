@@ -77,12 +77,18 @@ get () {
 }
 
 random () {
-  randomindex="$(shuf -i 1-${totalcount} -n 1)"
+  if [[ "$(uname)" == FreeBSD ]]; then
+    randomindex="$(shuffle -p 1 $(seq 1 ${totalcount}))"
+   echo "Using random index: $randomindex"
+  else
+    randomindex="$(shuf -i 1-${totalcount} -n 1)"
+   echo "Using random index: $randomindex"
+  fi
 	randomindex=$((randomindex-1))
 	echo "random index: $randomindex"
 	file=${array[$randomindex]}
   set "$file"
-	save "$file"
+	# save "$file"
 }
 
 handler () {
