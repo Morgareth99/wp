@@ -21,7 +21,7 @@
 
 # path to wallpaper directory (this is likely the only
 # thing you need to change...)
-dir="$HOME/wallpapers"
+dir="$HOME/Pictures"
 
 banner () {
   tput setaf 12
@@ -50,42 +50,39 @@ set () {
   file="$1"
   echo "Setting: $file"
   mkdir -p $HOME/.wp
-  feh --no-fehbg --bg-fill "$file" && \
-  echo "$file" > /tmp/.wp.${UID}.current
+#  feh --no-fehbg --bg-fill "$file" && \
+  feh --bg-tile "$file" && \
+  echo "$file" > $HOME/.wp/current
 }
 
 save () {
-  if [[ ! -f /tmp/.wp.${UID}.current ]]; then
-    echo "Error: /tmp/.wp.${UID}.current does not exist. Exiting."
-    exit 1
-  else
-    echo -n "Saving wallpaper selection: "
-    cat /tmp/.wp.${UID}.current > $HOME/.wp.current && f="$(cat $HOME/.wp.current)"; echo -n "$f "
-    echo
-  fi
+	  echo "Saving selection file: $HOME/.wp/current "
+    echo "$1" > $HOME/.wp/current
 }
 
 restore () {
   echo "Restoring last set wallpaper... "
-  if [[ -f $HOME/.wp.current ]]; then
-    wp="$(head -n 1 $HOME/.wp.current)"
+  if [[ -f $HOME/.wp/current ]]; then
+    wp="$(head -n 1 $HOME/.wp/current)"
     set "$wp" || echo "Error: could not set wallpaper: $wp - exiting..."
     exit 1
   else
-    echo "Error: could not re-store: $HOME/.wp.current does not exist - exiting..."
+    echo "Error: could not re-store: $HOME/.wp/current does not exist - exiting..."
     exit 1
   fi
 }
 
 get () {
-  cat $HOME/.wp.current
+  cat $HOME/.wp/current
 }
 
 random () {
   randomindex="$(shuf -i 1-${totalcount} -n 1)"
 	randomindex=$((randomindex-1))
-	file=$array
+	echo "random index: $randomindex"
+	file=${array[$randomindex]}
   set "$file"
+	save "$file"
 }
 
 handler () {
@@ -93,9 +90,6 @@ handler () {
   case "$reply" in
     n)
       random
-    ;;
-    s)
-      save
     ;;
     q)
       echo "Bye..."
@@ -115,7 +109,7 @@ case "$1" in
   --set)
     shift
     set "$1"
-    save
+    save "$1"
   ;;
   --get)
     get
@@ -123,14 +117,20 @@ case "$1" in
   --random)
     random
   ;;
-  --save)
-    save 
-  ;;
   --restore)
     restore 
   ;;
   --interactive)
     interactive
+  ;;
+  --help|--usage)
+    usage
+  ;;
+  --save)
+    save
+  ;;
+  '')
+    random
   ;;
   *)
     usage
