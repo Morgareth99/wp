@@ -37,58 +37,67 @@ banner () {
 banner
 
 usage () {
-  echo -n "[wp] Usage: "
-  echo "wp [--random|--set|--get|--save|--restore|--interactive]"
+  echo -n "USAGE: "
+  echo "wp [OPTIONS]"
+  echo ""
+  echo "OPTIONS: "
+  echo "--set|-s <file>             Sets <file> as wallpaper image"
+  echo "--get|-g                    Gets the currently saved wallpaper file"
+  echo "--random|-r                 Sets a random wallpaper"
+  echo "--restore                   Restores (sets) saved wallpaper"
+  echo "--interactive|-i            Start interactive mode"
+  echo "--help|-h                   This help information"
+  echo
 }
 
-array=($dir/*)
+shopt -s globstar
+array=($dir/**)
 totalcount="${#array[@]}"
-
-echo "Total number of wallpapers found: $totalcount"
 
 set () {
   file="$1"
-  echo "Setting: $file"
+  f="$(readlink -f $file)"
   mkdir -p $HOME/.wp
-#  feh --no-fehbg --bg-fill "$file" && \
-  feh --bg-tile "$file" && \
-  echo "$file" > $HOME/.wp/current
-}
-
-save () {
-	  echo "Saving selection file: $HOME/.wp/current "
-    echo "$1" > $HOME/.wp/current
+  echo "Setting wallpaper: ${f##*/}"
+  feh --bg-fill "$file" && \
+  if [[ ! -h "$file" ]]; then
+    banner
+    echo "Updating symlink: $HOME/.wp/current"
+    # echo "$file" > $HOME/.wp/current
+    unlink $HOME/.wp/current
+    # echo "DEBUG: file: $file (readlink: $(readlink -f $file)"
+    ln -s $file $HOME/.wp/current
+  fi
 }
 
 restore () {
-  echo "Restoring last set wallpaper... "
-  if [[ -f $HOME/.wp/current ]]; then
-    wp="$(head -n 1 $HOME/.wp/current)"
-    set "$wp" || echo "Error: could not set wallpaper: $wp - exiting..."
-    exit 1
-  else
-    echo "Error: could not re-store: $HOME/.wp/current does not exist - exiting..."
-    exit 1
-  fi
+  banner
+  set $HOME/.wp/current
 }
 
 get () {
-  cat $HOME/.wp/current
+  readlink -f $HOME/.wp/current
 }
 
 random () {
-  if [[ "$(uname)" == FreeBSD ]]; then
+echo "Using wallpaper directory: $dir"
+banner
+echo "Total number of wallpapers found: $totalcount"
+
+ if [[ "$(uname)" == FreeBSD ]]; then
     randomindex="$(shuffle -p 1 $(seq 1 ${totalcount}))"
+	  randomindex=$((randomindex-1))
+   banner
    echo "Using random index: $randomindex"
   else
     randomindex="$(shuf -i 1-${totalcount} -n 1)"
+	  randomindex=$((randomindex-1))
+    banner
    echo "Using random index: $randomindex"
   fi
-	randomindex=$((randomindex-1))
-	echo "random index: $randomindex"
+  banner
 	file=${array[$randomindex]}
   set "$file"
-	# save "$file"
 }
 
 handler () {
@@ -105,37 +114,38 @@ handler () {
 }
 
 interactive () {
-  echo "Keys: [n]ext [s]ave [q]uit"
+  echo "Interactive Mode. Keys: [n]ext [q]uit"
   while true; do
+    banner
     handler
   done
 }
 
 case "$1" in
-  --set)
+  --set|-s)
     shift
     set "$1"
-    save "$1"
   ;;
-  --get)
+  --get|-g)
     get
   ;;
-  --random)
+  --random|-z)
     random
   ;;
-  --restore)
+  --restore|-r)
     restore 
   ;;
-  --interactive)
+  --interactive|-i)
     interactive
   ;;
-  --help|--usage)
+  --help|--usage|-h|--)
     usage
   ;;
-  --save)
-    save
-  ;;
   '')
+    echo "No option specified. Setting a random wallpaper."
+    banner
+    echo "Use --help for usage help."
+    banner
     random
   ;;
   *)
