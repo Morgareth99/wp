@@ -9,11 +9,7 @@ wp is a tiny wallpaper setter script with save/restore functionality and optiona
 Usage
 =====
 
-A usage example looks like so:
-
->  ~/git/wp [master]  ./wp
-[wp] [wp] Usage: wp [--random|--set|--get|--save|--restore|--interactive]
->  ~/git/wp [master]  
+See --help for usage information.
 
 Requirements
 ============
@@ -23,7 +19,7 @@ wp currently utilizes feh to set a background image (which of course easily can 
 Interactive Mode
 ================
 
-In interactive mode, wp allows you to select a wallpaper that you like by repeatedly hitting [n] until you found a wallpaper that fits your taste. If you like one, just press [s] to save your selection and [q] to quit wp.
+In interactive mode, wp allows you to select a wallpaper that you like by repeatedly hitting [n] until you found a wallpaper that fits your taste. It will automatically be sym-linked so you can easily re-store it when you re-start X.
 
 Random Mode
 ===========
