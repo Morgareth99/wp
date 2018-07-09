@@ -17,12 +17,17 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with wp. If not, see <http://www.gnu.org/licenses/>.
-#
+# 
 
-# path to wallpaper directory (this is likely the only
+
+# Path to wallpaper directory (this is likely the only
 # thing you need to change...)
 dir="$HOME/Pictures"
 
+# We use non-recursive mode, unless specified otherwise (-r|--recursive)
+recursive=0
+
+# This displays the "[wp] " prefix (coloured, if possible)
 banner () {
   tput setaf 12
   echo -n "["
@@ -41,65 +46,90 @@ usage () {
   echo "wp [OPTIONS]"
   echo ""
   echo "OPTIONS: "
-  echo "--set|-s <file>             Sets <file> as wallpaper image"
-  echo "--get|-g                    Gets the currently saved wallpaper file"
-  echo "--random|-r                 Sets a random wallpaper"
-  echo "--restore                   Restores (sets) saved wallpaper"
-  echo "--interactive|-i            Start interactive mode"
-  echo "--help|-h                   This help information"
+  echo "--set|-s <file>           Sets <file> as wallpaper image"
+  echo "--get|-g                  Gets the currently saved wallpaper file"
+  echo "--random|-z               Sets a random wallpaper"
+  echo "--recursive|-e            Sets a random wallpaper (recursive mode)"
+  echo "--restore|-t              Restores (sets) saved wallpaper"
+  echo "--save|-x                 Saves (permanently) current wallpaper"
+  echo "--interactive|-i          Start interactive mode"
+  echo "--help|-h                 This help information"
   echo
 }
 
-shopt -s globstar
-array=($dir/**)
-totalcount="${#array[@]}"
-
+# Sets a wallpaper
 set () {
   file="$1"
   f="$(readlink -f $file)"
   mkdir -p $HOME/.wp
   echo "Setting wallpaper: ${f##*/}"
   feh --bg-fill "$file" && \
-  if [[ ! -h "$file" ]]; then
+  banner
+  ts="/tmp/.wp.selection.${USER}"
+  echo "Temporarily storing wallpaper selection: $ts"
+  banner
+  echo "Use --save to store it permanently."
+  echo "$file" > "$ts"
+}
+
+# Saves the currently selected (temporary) wallpaper. This just writes the
+# filename to ~/.wp/current (wp will exit with return code 200 if no
+# wallpaper has been temporarily set prior).
+save () {
+  if [[ ! -f /tmp/.wp.selection.${USER} ]]; then
     banner
-    echo "Updating symlink: $HOME/.wp/current"
-    # echo "$file" > $HOME/.wp/current
-    unlink $HOME/.wp/current
-    # echo "DEBUG: file: $file (readlink: $(readlink -f $file)"
-    ln -s $file $HOME/.wp/current
+    echo "No temporarily stored wallpaper selection found."
+    exit 200
+  else
+    f="$(tail -n 1 /tmp/.wp.selection.${USER})"
+    echo "Storing wallpaper selection to ~/.wp/current ..."
+    echo "$f" > $HOME/.wp/current
   fi
 }
 
+# This gets the currently *saved* wallpaper selection (which can be
+# different from a wallpaper that has just been set, but not saved, yet).
+get () {
+  cat $HOME/.wp/current
+}
+
+# Restores the last saved wallpaper
 restore () {
   banner
-  set $HOME/.wp/current
+  set "$(tail -n 1 $HOME/.wp/current)"
 }
 
-get () {
-  readlink -f $HOME/.wp/current
-}
-
+# Sets a random wallpaper
 random () {
 echo "Using wallpaper directory: $dir"
 banner
-echo "Total number of wallpapers found: $totalcount"
-
- if [[ "$(uname)" == FreeBSD ]]; then
+  if [[ "$recursive" -gt 0 ]]; then
+    echo "Recursive mode... $recursive"
+    shopt -s globstar
+    array=($dir/**)
+    totalcount="${#array[@]}"
+  else
+    array=($dir/*)
+    totalcount="${#array[@]}"
+    echo "Non-recursive mode..."
+  fi
+  if [[ "$(uname)" == FreeBSD ]]; then
     randomindex="$(shuffle -p 1 $(seq 1 ${totalcount}))"
 	  randomindex=$((randomindex-1))
-   banner
-   echo "Using random index: $randomindex"
+    banner
+    echo "Using random index: $randomindex/$totalcount"
   else
     randomindex="$(shuf -i 1-${totalcount} -n 1)"
 	  randomindex=$((randomindex-1))
     banner
-   echo "Using random index: $randomindex"
+    echo "Using random index: $randomindex/$totalcount"
   fi
   banner
 	file=${array[$randomindex]}
   set "$file"
 }
 
+# Used for interactive selection mode
 handler () {
   read -s -n 1 reply
   case "$reply" in
@@ -113,6 +143,7 @@ handler () {
   esac
 }
 
+# Interactive mode
 interactive () {
   echo "Interactive Mode. Keys: [n]ext [q]uit"
   while true; do
@@ -121,6 +152,7 @@ interactive () {
   done
 }
 
+# Parse arguments
 case "$1" in
   --set|-s)
     shift
@@ -132,8 +164,15 @@ case "$1" in
   --random|-z)
     random
   ;;
-  --restore|-r)
+  --recursive|-e)
+    recursive=1
+    random
+  ;;
+  --restore|-t)
     restore 
+  ;;
+  --save|-x)
+    save
   ;;
   --interactive|-i)
     interactive
