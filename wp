@@ -63,7 +63,7 @@ set () {
   f="$(readlink -f $file)"
   mkdir -p $HOME/.wp
   echo "Setting wallpaper: ${f##*/}"
-  feh --bg-fill "$file" && \
+  feh --no-fehbg --bg-fill "$file" && \
   banner
   ts="/tmp/.wp.selection.${USER}"
   echo "Temporarily storing wallpaper selection: $ts"
